@@ -118,14 +118,25 @@ OpenStreetMapSearchAndPick(
 |----------|-------------|---------|
 | `onPicked` | Callback function when a location is selected. | **Required** |
 | `initialCenter` | Starting coordinates for the map. | User's current location |
+| `initialZoom` | Initial zoom level of the map. | `15.0` |
+| `maxZoom` | Maximum zoom level allowed. | `18.0` |
+| `minZoom` | Minimum zoom level allowed. | `6.0` |
+| `tileUrlTemplate` | Custom Tile Server URL template. | `'https://tile.openstreetmap.org/{z}/{x}/{y}.png'` |
+| `userAgentPackageName` | Application package name. Useful for compliant usage of OpenStreetMap Tile servers. | `'osm_search_and_pick'` |
 | `buttonColor` | Color of the FABs and 'Set Location' button. | `Colors.blue` |
-| `buttonText` | Text displayed on the 'Set Location' button. | 'Set Current Location' |
-| `hintText` | Text displayed in the search bar. | 'Search Location' |
+| `buttonText` | Text displayed on the 'Set Location' button. | `'Set Current Location'` |
+| `buttonBorderRadius` | Border radius for the 'Set Location' button. | `5.0` |
+| `buttonElevation` | Elevation for the 'Set Location' button. | `2.0` |
+| `hintText` | Text displayed in the search bar. | `'Search Location'` |
 | `zoomInIcon` | Icon for zooming in. | `Icons.zoom_in_map` |
 | `zoomOutIcon` | Icon for zooming out. | `Icons.zoom_out_map` |
 | `currentLocationIcon` | Icon for tracking current location. | `Icons.my_location` |
-| `locationPinIcon` | Icon for the center pin. | `Icons.location_on` |
-| `locationPinText` | Label above the center pin. | 'Location' |
+| `locationPinTextStyle` | Text style for the label above the center pin. | `TextStyle(...)` |
+| `locationPinText` | Label above the center pin. | `'Location'` |
+| `showZoomButtons` | Whether to show zoom in/out buttons. | `true` |
+| `showCurrentLocationButton` | Whether to show the current location button. | `true` |
+| `showSearchBar` | Whether to show the search bar. | `true` |
+| `showSetLocationButton` | Whether to show the main "Set Location" button. | `true` |
 
 ---
 

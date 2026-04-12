@@ -61,11 +61,15 @@ class _MyHomePageState extends State<MyHomePage> {
               const TextStyle(fontSize: 18, fontStyle: FontStyle.normal),
           buttonColor: Colors.blue,
           buttonText: 'Set Current Location',
+          buttonBorderRadius: 10,
+          buttonElevation: 5,
+          initialZoom: 16,
+          userAgentPackageName: 'com.example.osm_search_and_pick',
           onPicked: (pickedData) {
-            print(pickedData.latLong.latitude);
-            print(pickedData.latLong.longitude);
-            print(pickedData.address);
-            print(pickedData.addressName);
+            debugPrint(pickedData.latLong.latitude.toString());
+            debugPrint(pickedData.latLong.longitude.toString());
+            debugPrint(pickedData.address.toString());
+            debugPrint(pickedData.addressName);
           },
         ));
   }

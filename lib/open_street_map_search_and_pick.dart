@@ -67,6 +67,41 @@ class OpenStreetMapSearchAndPick extends StatefulWidget {
   /// If null, it will default to the user's current location.
   final LatLong? initialCenter;
 
+  /// Zoom level when the map is initialized. Defaults to 15.0.
+  final double initialZoom;
+
+  /// Maximum zoom level of the map. Defaults to 18.0.
+  final double maxZoom;
+
+  /// Minimum zoom level of the map. Defaults to 6.0.
+  final double minZoom;
+
+  /// The URL template for the TileLayer. Defaults to 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'.
+  final String tileUrlTemplate;
+
+  /// Border radius of the main 'Set Location' button. Defaults to 5.0.
+  final double buttonBorderRadius;
+
+  /// Elevation of the main 'Set Location' button. Defaults to 2.0.
+  final double buttonElevation;
+
+  /// Whether to show the zoom in/out buttons. Defaults to true.
+  final bool showZoomButtons;
+
+  /// Whether to show the current location button. Defaults to true.
+  final bool showCurrentLocationButton;
+
+  /// Whether to show the search bar. Defaults to true.
+  final bool showSearchBar;
+
+  /// Whether to show the main "Set Location" button at the bottom. Defaults to true.
+  final bool showSetLocationButton;
+
+  /// The application package name used to identify the app to the OSM tile server.
+  /// It is highly recommended to set this to your app's package name to comply with
+  /// OSM Tile Usage Policy and avoid getting a 403 Forbidden error.
+  final String userAgentPackageName;
+
   const OpenStreetMapSearchAndPick({
     super.key,
     required this.onPicked,
@@ -88,6 +123,17 @@ class OpenStreetMapSearchAndPick extends StatefulWidget {
     this.baseUri = 'https://nominatim.openstreetmap.org',
     this.locationPinIcon = Icons.location_on,
     this.initialCenter,
+    this.userAgentPackageName = 'osm_search_and_pick',
+    this.initialZoom = 15.0,
+    this.maxZoom = 18.0,
+    this.minZoom = 6.0,
+    this.tileUrlTemplate = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    this.buttonBorderRadius = 5.0,
+    this.buttonElevation = 2.0,
+    this.showZoomButtons = true,
+    this.showCurrentLocationButton = true,
+    this.showSearchBar = true,
+    this.showSetLocationButton = true,
   });
 
   @override
@@ -142,7 +188,9 @@ class _OpenStreetMapSearchAndPickState
     String url =
         '${widget.baseUri}/reverse?format=json&lat=$latitude&lon=$longitude&zoom=18&addressdetails=1';
 
-    var response = await client.get(Uri.parse(url));
+    var response = await client.get(Uri.parse(url), headers: {
+      'User-Agent': widget.userAgentPackageName,
+    });
     // var response = await client.post(Uri.parse(url));
     var decodedResponse =
         jsonDecode(utf8.decode(response.bodyBytes)) as Map<dynamic, dynamic>;
@@ -163,7 +211,9 @@ class _OpenStreetMapSearchAndPickState
     String url =
         '${widget.baseUri}/reverse?format=json&lat=$latitude&lon=$longitude&zoom=18&addressdetails=1';
 
-    var response = await client.get(Uri.parse(url));
+    var response = await client.get(Uri.parse(url), headers: {
+      'User-Agent': widget.userAgentPackageName,
+    });
     // var response = await client.post(Uri.parse(url));
     var decodedResponse =
         jsonDecode(utf8.decode(response.bodyBytes)) as Map<dynamic, dynamic>;
@@ -183,7 +233,9 @@ class _OpenStreetMapSearchAndPickState
           String url =
               '${widget.baseUri}/reverse?format=json&lat=${event.camera.center.latitude}&lon=${event.camera.center.longitude}&zoom=18&addressdetails=1';
 
-          var response = await client.get(Uri.parse(url));
+          var response = await client.get(Uri.parse(url), headers: {
+            'User-Agent': widget.userAgentPackageName,
+          });
           // var response = await client.post(Uri.parse(url));
           var decodedResponse = jsonDecode(utf8.decode(response.bodyBytes))
               as Map<dynamic, dynamic>;
@@ -242,14 +294,14 @@ class _OpenStreetMapSearchAndPickState
                 child: FlutterMap(
                   options: MapOptions(
                       initialCenter: mapCentre ?? const LatLng(0, 0),
-                      initialZoom: 15.0,
-                      maxZoom: 18,
-                      minZoom: 6),
+                      initialZoom: widget.initialZoom,
+                      maxZoom: widget.maxZoom,
+                      minZoom: widget.minZoom),
                   mapController: _mapController,
                   children: [
                     TileLayer(
-                      urlTemplate:
-                          "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                      urlTemplate: widget.tileUrlTemplate,
+                      userAgentPackageName: widget.userAgentPackageName,
                       // attributionBuilder: (_) {
                       //   return Text("© OpenStreetMap contributors");
                       // },
@@ -279,178 +331,187 @@ class _OpenStreetMapSearchAndPickState
                   ),
                 ),
               ),
-              Positioned(
-                bottom: 180,
-                right: 5,
-                child: FloatingActionButton(
-                  heroTag: 'btn1',
-                  backgroundColor: widget.buttonColor,
-                  onPressed: () {
-                    _mapController.move(
-                        _mapController.camera.center,
-                        _mapController.camera.zoom + 1);
-                  },
-                  child: Icon(
-                    widget.zoomInIcon,
-                    color: widget.buttonTextColor,
-                  ),
-                ),
-              ),
-              Positioned(
-                bottom: 120,
-                right: 5,
-                child: FloatingActionButton(
-                  heroTag: 'btn2',
-                  backgroundColor: widget.buttonColor,
-                  onPressed: () {
-                    _mapController.move(
-                        _mapController.camera.center,
-                        _mapController.camera.zoom - 1);
-                  },
-                  child: Icon(
-                    widget.zoomOutIcon,
-                    color: widget.buttonTextColor,
-                  ),
-                ),
-              ),
-              Positioned(
-                bottom: 60,
-                right: 5,
-                child: FloatingActionButton(
-                  heroTag: 'btn3',
-                  backgroundColor: widget.buttonColor,
-                  onPressed: () async {
-                    if (mapCentre != null) {
-                      _mapController.move(
-                          LatLng(mapCentre.latitude, mapCentre.longitude),
-                          _mapController.camera.zoom);
-                    } else {
-                      _mapController.move(
-                          LatLng(50.5, 30.51), _mapController.camera.zoom);
-                    }
-                    setNameCurrentPos();
-                  },
-                  child: Icon(
-                    widget.currentLocationIcon,
-                    color: widget.buttonTextColor,
-                  ),
-                ),
-              ),
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: Container(
-                  margin: const EdgeInsets.all(15),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                  child: Column(
-                    children: [
-                      TextFormField(
-                          controller: _searchController,
-                          focusNode: _focusNode,
-                          decoration: InputDecoration(
-                            hintText: widget.hintText,
-                            border: inputBorder,
-                            focusedBorder: inputFocusBorder,
-                          ),
-                          onChanged: (String value) {
-                            if (_debounce?.isActive ?? false) {
-                              _debounce?.cancel();
-                            }
-
-                            _debounce = Timer(
-                                const Duration(milliseconds: 2000), () async {
-                              if (kDebugMode) {
-                                print(value);
-                              }
-                              var client = http.Client();
-                              try {
-                                String url =
-                                    '${widget.baseUri}/search?q=$value&format=json&polygon_geojson=1&addressdetails=1';
-                                if (kDebugMode) {
-                                  print(url);
-                                }
-                                var response = await client.get(Uri.parse(url));
-                                // var response = await client.post(Uri.parse(url));
-                                var decodedResponse =
-                                    jsonDecode(utf8.decode(response.bodyBytes))
-                                        as List<dynamic>;
-                                if (kDebugMode) {
-                                  print(decodedResponse);
-                                }
-                                _options = decodedResponse
-                                    .map(
-                                      (e) => OSMdata(
-                                        displayname: e['display_name'],
-                                        lat: double.parse(e['lat']),
-                                        lon: double.parse(e['lon']),
-                                      ),
-                                    )
-                                    .toList();
-                                setState(() {});
-                              } finally {
-                                client.close();
-                              }
-
-                              setState(() {});
-                            });
-                          }),
-                      StatefulBuilder(
-                        builder: ((context, setState) {
-                          return ListView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount:
-                                _options.length > 5 ? 5 : _options.length,
-                            itemBuilder: (context, index) {
-                              return ListTile(
-                                title: Text(_options[index].displayname),
-                                subtitle: Text(
-                                    '${_options[index].lat},${_options[index].lon}'),
-                                onTap: () {
-                                  _mapController.move(
-                                      LatLng(_options[index].lat,
-                                          _options[index].lon),
-                                      15.0);
-
-                                  _focusNode.unfocus();
-                                  _options.clear();
-                                  setState(() {});
-                                },
-                              );
-                            },
-                          );
-                        }),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: WideButton(
-                      widget.buttonText,
-                      textStyle: widget.buttonTextStyle,
-                      height: widget.buttonHeight,
-                      width: widget.buttonWidth,
-                      onPressed: () async {
-                        final value = await pickData();
-                        widget.onPicked(value);
-                      },
-                      backgroundColor: widget.buttonColor,
-                      foregroundColor: widget.buttonTextColor,
+              if (widget.showZoomButtons)
+                Positioned(
+                  bottom: 180,
+                  right: 5,
+                  child: FloatingActionButton(
+                    heroTag: 'btn1',
+                    backgroundColor: widget.buttonColor,
+                    onPressed: () {
+                      _mapController.move(_mapController.camera.center,
+                          _mapController.camera.zoom + 1);
+                    },
+                    child: Icon(
+                      widget.zoomInIcon,
+                      color: widget.buttonTextColor,
                     ),
                   ),
                 ),
-              )
+              if (widget.showZoomButtons)
+                Positioned(
+                  bottom: 120,
+                  right: 5,
+                  child: FloatingActionButton(
+                    heroTag: 'btn2',
+                    backgroundColor: widget.buttonColor,
+                    onPressed: () {
+                      _mapController.move(_mapController.camera.center,
+                          _mapController.camera.zoom - 1);
+                    },
+                    child: Icon(
+                      widget.zoomOutIcon,
+                      color: widget.buttonTextColor,
+                    ),
+                  ),
+                ),
+              if (widget.showCurrentLocationButton)
+                Positioned(
+                  bottom: 60,
+                  right: 5,
+                  child: FloatingActionButton(
+                    heroTag: 'btn3',
+                    backgroundColor: widget.buttonColor,
+                    onPressed: () async {
+                      if (mapCentre != null) {
+                        _mapController.move(
+                            LatLng(mapCentre.latitude, mapCentre.longitude),
+                            _mapController.camera.zoom);
+                      } else {
+                        _mapController.move(
+                            LatLng(50.5, 30.51), _mapController.camera.zoom);
+                      }
+                      setNameCurrentPos();
+                    },
+                    child: Icon(
+                      widget.currentLocationIcon,
+                      color: widget.buttonTextColor,
+                    ),
+                  ),
+                ),
+              if (widget.showSearchBar)
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: Container(
+                    margin: const EdgeInsets.all(15),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    child: Column(
+                      children: [
+                        TextFormField(
+                            controller: _searchController,
+                            focusNode: _focusNode,
+                            decoration: InputDecoration(
+                              hintText: widget.hintText,
+                              border: inputBorder,
+                              focusedBorder: inputFocusBorder,
+                            ),
+                            onChanged: (String value) {
+                              if (_debounce?.isActive ?? false) {
+                                _debounce?.cancel();
+                              }
+
+                              _debounce = Timer(
+                                  const Duration(milliseconds: 2000), () async {
+                                if (kDebugMode) {
+                                  print(value);
+                                }
+                                var client = http.Client();
+                                try {
+                                  String url =
+                                      '${widget.baseUri}/search?q=$value&format=json&polygon_geojson=1&addressdetails=1';
+                                  if (kDebugMode) {
+                                    print(url);
+                                  }
+                                  var response = await client.get(Uri.parse(url),
+                                      headers: {
+                                        'User-Agent':
+                                            widget.userAgentPackageName,
+                                      });
+                                  // var response = await client.post(Uri.parse(url));
+                                  var decodedResponse = jsonDecode(
+                                          utf8.decode(response.bodyBytes))
+                                      as List<dynamic>;
+                                  if (kDebugMode) {
+                                    print(decodedResponse);
+                                  }
+                                  _options = decodedResponse
+                                      .map(
+                                        (e) => OSMdata(
+                                          displayname: e['display_name'],
+                                          lat: double.parse(e['lat']),
+                                          lon: double.parse(e['lon']),
+                                        ),
+                                      )
+                                      .toList();
+                                  setState(() {});
+                                } finally {
+                                  client.close();
+                                }
+
+                                setState(() {});
+                              });
+                            }),
+                        StatefulBuilder(
+                          builder: ((context, setState) {
+                            return ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount:
+                                  _options.length > 5 ? 5 : _options.length,
+                              itemBuilder: (context, index) {
+                                return ListTile(
+                                  title: Text(_options[index].displayname),
+                                  subtitle: Text(
+                                      '${_options[index].lat},${_options[index].lon}'),
+                                  onTap: () {
+                                    _mapController.move(
+                                        LatLng(_options[index].lat,
+                                            _options[index].lon),
+                                        15.0);
+
+                                    _focusNode.unfocus();
+                                    _options.clear();
+                                    setState(() {});
+                                  },
+                                );
+                              },
+                            );
+                          }),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              if (widget.showSetLocationButton)
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: WideButton(
+                        widget.buttonText,
+                        textStyle: widget.buttonTextStyle,
+                        height: widget.buttonHeight,
+                        width: widget.buttonWidth,
+                        onPressed: () async {
+                          final value = await pickData();
+                          widget.onPicked(value);
+                        },
+                        backgroundColor: widget.buttonColor,
+                        foregroundColor: widget.buttonTextColor,
+                        borderRadius: widget.buttonBorderRadius,
+                        elevation: widget.buttonElevation,
+                      ),
+                    ),
+                  ),
+                )
             ],
           ),
         );
@@ -465,7 +526,9 @@ class _OpenStreetMapSearchAndPickState
     String url =
         '${widget.baseUri}/reverse?format=json&lat=${_mapController.camera.center.latitude}&lon=${_mapController.camera.center.longitude}&zoom=18&addressdetails=1';
 
-    var response = await client.get(Uri.parse(url));
+    var response = await client.get(Uri.parse(url), headers: {
+      'User-Agent': widget.userAgentPackageName,
+    });
     // var response = await client.post(Uri.parse(url));
     var decodedResponse =
         jsonDecode(utf8.decode(response.bodyBytes)) as Map<dynamic, dynamic>;

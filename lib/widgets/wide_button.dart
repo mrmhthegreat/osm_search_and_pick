@@ -11,6 +11,8 @@ class WideButton extends StatelessWidget {
     this.foregroundColor = Colors.white,
     this.width = double.infinity,
     this.textStyle = const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+    this.borderRadius = 5.0,
+    this.elevation = 2.0,
   });
 
   /// Should be inside a column, row or flex widget
@@ -21,6 +23,8 @@ class WideButton extends StatelessWidget {
   final Color backgroundColor;
   final TextStyle textStyle;
   final Color foregroundColor;
+  final double borderRadius;
+  final double elevation;
   final void Function() onPressed;
 
   @override
@@ -34,6 +38,10 @@ class WideButton extends StatelessWidget {
           style: ElevatedButton.styleFrom(
             backgroundColor: backgroundColor,
             foregroundColor: foregroundColor,
+            elevation: elevation,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(borderRadius),
+            ),
           ),
           onPressed: onPressed,
           child: Text(text, style: textStyle),
