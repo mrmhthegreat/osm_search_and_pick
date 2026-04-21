@@ -1,6 +1,6 @@
 name: osm_search_and_pick
 description: A flutter place search and location picker plugin that uses Open Street Map.
-version: 0.3.0
+version: 0.3.1
 homepage: https://github.com/mrmhthegreat/osm_search_and_pick.git
 
 environment:
