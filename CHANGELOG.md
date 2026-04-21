@@ -1,3 +1,6 @@
+## 0.3.1
+- Fix Images 
+
 ## 0.3.0
 
 - Added support for multiple **Zones** (Circles) with custom radius, color, and borders.
