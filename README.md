@@ -8,13 +8,19 @@ A Flutter place search and location picker plugin that uses Open Street Map. It 
 - 🔍 **Search location by places**: Integrated search bar for finding addresses via Nominatim.
 - 🚀 **Easy to use**: Minimal setup required to get started.
 - 🎨 **Highly Customizable**: Change icons, colors, text styles, and more.
+- ⭕ **Zones Support**: Draw multiple circles with custom radius (**meters**), color and borders.
+- 📌 **Multiple Pins**: Add multiple markers with custom icons, titles, and details.
+- 👆 **Interactive Markers**: Markers and zones can show details on tap with custom designed widgets.
+- 👁️ **Preview Mode**: Use the map in read-only mode for viewing only.
 - 📱 **Platform Support**: Works on Android, iOS, and Web.
 
 ---
 
-## Demo
+### Picker Mode
+![Picker Mode](screenshots/DEMO%20WITH%20PICKER.png)
 
-![Demo](https://user-images.githubusercontent.com/69592754/179368498-fe392cdb-c321-46e8-ac4d-6b816e0a3758.png)
+### Read-Only Mode
+![Read-Only Mode](screenshots/DEMO%20READ%20ONLY.png)
 
 ---
 
@@ -57,7 +63,7 @@ Add `osm_search_and_pick` to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  osm_search_and_pick: ^0.2.0
+  osm_search_and_pick: ^0.3.0
 ```
 
 ---
@@ -91,8 +97,6 @@ class MyApp extends StatelessWidget {
 }
 ```
 
-### Advanced Implementation with Customization
-
 ```dart
 OpenStreetMapSearchAndPick(
     initialCenter: LatLong(23, 89),
@@ -100,13 +104,85 @@ OpenStreetMapSearchAndPick(
     buttonText: 'Set Current Location',
     locationPinIcon: Icons.location_on,
     locationPinText: 'Store Location',
-    hintText: 'Search for a store...',
+    backgroundColor: Colors.white,
+    isReadOnly: false,
+    zones: [
+      ZoneData(
+        center: LatLong(23, 89),
+        radius: 500,
+        color: Colors.blue.withOpacity(0.3),
+        borderColor: Colors.blue,
+        borderStrokeWidth: 2,
+        title: 'Work Zone',
+        detail: 'Office building area',
+      ),
+    ],
+    pins: [
+      PinData(
+        latLong: LatLong(23.1, 89.1),
+        title: 'Delivery Point',
+        color: Colors.red,
+      ),
+    ],
     onPicked: (pickedData) {
       // Handle the picked data
       setState(() {
           selectedAddress = pickedData.addressName;
       });
     }
+)
+```
+
+### Interactive & Customizable Markers
+
+Markers (Pins and Zone Centers) now support tap interactions. By default, tapping a marker reveals its title and detail. You can provide a `detailWidget` for a completely custom design.
+
+```dart
+PinData(
+  latLong: LatLong(23.1, 89.1),
+  title: 'Custom Pin',
+  detailWidget: Container(
+    padding: EdgeInsets.all(8),
+    decoration: BoxDecoration(
+      color: Colors.blue,
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Text('Custom UI', style: TextStyle(color: Colors.white)),
+  ),
+  onTap: () => print('Tapped!'),
+)
+```
+
+```dart
+ZoneData(
+  center: LatLong(23, 89),
+  radius: 100,
+  title: 'Safe Zone',
+  detail: 'Authorized personnel only',
+  detailWidget: Card(
+    color: Colors.green,
+    child: Padding(
+      padding: EdgeInsets.all(8.0),
+      child: Text('Protected Area', style: TextStyle(color: Colors.white)),
+    ),
+  ),
+  onTap: () => print('Zone tapped!'),
+)
+```
+
+> [!NOTE]
+> The `radius` in `ZoneData` is now interpreted in **meters**.
+
+### Preview (Read-Only) Mode
+
+Disable search, center pin, and the "Set Location" button to use the map as a simple viewer.
+
+```dart
+OpenStreetMapSearchAndPick(
+  isReadOnly: true,
+  onPicked: (_) {}, // Required but not used in read-only mode
+  zones: [...],
+  pins: [...],
 )
 ```
 
@@ -137,6 +213,10 @@ OpenStreetMapSearchAndPick(
 | `showCurrentLocationButton` | Whether to show the current location button. | `true` |
 | `showSearchBar` | Whether to show the search bar. | `true` |
 | `showSetLocationButton` | Whether to show the main "Set Location" button. | `true` |
+| `backgroundColor` | Background color for search bar and results. | `Colors.white` |
+| `isReadOnly` | Enables read-only mode (hides picker/search UI). | `false` |
+| `zones` | List of `ZoneData` to draw circles on the map. | `[]` |
+| `pins` | List of `PinData` to draw custom markers. | `[]` |
 
 ---
 

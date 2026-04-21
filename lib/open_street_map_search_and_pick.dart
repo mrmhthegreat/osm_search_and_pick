@@ -102,6 +102,18 @@ class OpenStreetMapSearchAndPick extends StatefulWidget {
   /// OSM Tile Usage Policy and avoid getting a 403 Forbidden error.
   final String userAgentPackageName;
 
+  /// The background color of the search bar and results. Defaults to [Colors.white].
+  final Color backgroundColor;
+
+  /// A list of zones to be drawn on the map as circles.
+  final List<ZoneData> zones;
+
+  /// A list of pins to be drawn on the map.
+  final List<PinData> pins;
+
+  /// Whether the map is in read-only mode (hides search and picker UI).
+  final bool isReadOnly;
+
   const OpenStreetMapSearchAndPick({
     super.key,
     required this.onPicked,
@@ -134,6 +146,10 @@ class OpenStreetMapSearchAndPick extends StatefulWidget {
     this.showCurrentLocationButton = true,
     this.showSearchBar = true,
     this.showSetLocationButton = true,
+    this.backgroundColor = Colors.white,
+    this.zones = const [],
+    this.pins = const [],
+    this.isReadOnly = false,
   });
 
   @override
@@ -150,6 +166,7 @@ class _OpenStreetMapSearchAndPickState
   Timer? _debounce;
   var client = http.Client();
   late Future<Position?> latlongFuture;
+  Object? _selectedElement;
 
   Future<Position?> getCurrentPosLatLong() async {
     LocationPermission locationPermission = await Geolocator.checkPermission();
@@ -306,31 +323,252 @@ class _OpenStreetMapSearchAndPickState
                       //   return Text("© OpenStreetMap contributors");
                       // },
                     ),
-                  ],
-                ),
-              ),
-              Positioned.fill(
-                child: IgnorePointer(
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(widget.locationPinText,
-                            style: widget.locationPinTextStyle,
-                            textAlign: TextAlign.center),
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 50),
-                          child: Icon(
-                            widget.locationPinIcon,
-                            size: 50,
-                            color: widget.locationPinIconColor,
+                    CircleLayer(
+                      circles: widget.zones
+                          .map<CircleMarker>(
+                            (e) => CircleMarker(
+                              point: LatLng(
+                                  e.center.latitude, e.center.longitude),
+                              radius: e.radius,
+                              useRadiusInMeter: true,
+                              color: e.color,
+                              borderColor: e.borderColor,
+                              borderStrokeWidth: e.borderStrokeWidth,
+                            ),
+                          )
+                          .toList(),
+                    ),
+                    MarkerLayer(
+                      markers: [
+                        ...widget.pins.map<Marker>(
+                          (e) => Marker(
+                            key: ObjectKey(e),
+                            point:
+                                LatLng(e.latLong.latitude, e.latLong.longitude),
+                            alignment: Alignment.bottomCenter,
+                            width: 150,
+                            height: 150,
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _selectedElement =
+                                      _selectedElement == e ? null : e;
+                                });
+                                if (e.onTap != null) e.onTap!();
+                              },
+                              child: Stack(
+                                alignment: Alignment.bottomCenter,
+                                children: [
+                                  Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: [
+                                      if (_selectedElement == e)
+                                        Flexible(
+                                          child: e.detailWidget ??
+                                              Column(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  if (e.title.isNotEmpty)
+                                                    Container(
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                          horizontal: 4,
+                                                          vertical: 2),
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.black54,
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                                4),
+                                                      ),
+                                                      child: Text(
+                                                        e.title,
+                                                        style: const TextStyle(
+                                                            color: Colors.white,
+                                                            fontSize: 10),
+                                                        overflow:
+                                                            TextOverflow.ellipsis,
+                                                      ),
+                                                    ),
+                                                  if (e.detail.isNotEmpty)
+                                                    Container(
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                          horizontal: 4,
+                                                          vertical: 2),
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.white70,
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                                4),
+                                                      ),
+                                                      child: Text(
+                                                        e.detail,
+                                                        style: const TextStyle(
+                                                            color: Colors.black,
+                                                            fontSize: 8),
+                                                        overflow:
+                                                            TextOverflow.ellipsis,
+                                                      ),
+                                                    ),
+                                                ],
+                                              ),
+                                        ),
+                                      Icon(
+                                        e.icon,
+                                        color: e.color,
+                                        size: 30,
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        ...widget.zones.map<Marker>(
+                          (e) => Marker(
+                            key: ObjectKey(e),
+                            point: LatLng(
+                                e.center.latitude, e.center.longitude),
+                            alignment: Alignment.center,
+                            width: 120,
+                            height: 120,
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _selectedElement =
+                                      _selectedElement == e ? null : e;
+                                });
+                                if (e.onTap != null) e.onTap!();
+                              },
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      if (_selectedElement == e)
+                                        Flexible(
+                                          child: e.detailWidget ??
+                                              Column(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  if (e.title.isNotEmpty)
+                                                    Container(
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                          horizontal: 4,
+                                                          vertical: 2),
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.black54,
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                                4),
+                                                      ),
+                                                      child: Text(
+                                                        e.title,
+                                                        style: const TextStyle(
+                                                            color: Colors.white,
+                                                            fontSize: 10),
+                                                        overflow:
+                                                            TextOverflow.ellipsis,
+                                                      ),
+                                                    ),
+                                                  if (e.detail.isNotEmpty)
+                                                    Container(
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                          horizontal: 4,
+                                                          vertical: 2),
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.white70,
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                                4),
+                                                      ),
+                                                      child: Text(
+                                                        e.detail,
+                                                        style: const TextStyle(
+                                                            color: Colors.black,
+                                                            fontSize: 8),
+                                                        overflow:
+                                                            TextOverflow.ellipsis,
+                                                      ),
+                                                    ),
+                                                  if (e.title.isEmpty &&
+                                                      e.detail.isEmpty)
+                                                    Container(
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                          horizontal: 6,
+                                                          vertical: 4),
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.black87,
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                                4),
+                                                      ),
+                                                      child: const Text(
+                                                        'Tap to see more detail',
+                                                        style: TextStyle(
+                                                            color: Colors.white,
+                                                            fontSize: 10),
+                                                      ),
+                                                    ),
+                                                ],
+                                              ),
+                                        ),
+                                      Container(
+                                        width: 12,
+                                        height: 12,
+                                        decoration: BoxDecoration(
+                                          color: e.borderColor,
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                              color: Colors.white, width: 2),
+                                          boxShadow: const [
+                                            BoxShadow(
+                                                color: Colors.black26,
+                                                blurRadius: 2)
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
                       ],
                     ),
-                  ),
+                  ],
                 ),
               ),
+              if (!widget.isReadOnly)
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(widget.locationPinText,
+                              style: widget.locationPinTextStyle,
+                              textAlign: TextAlign.center),
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 50),
+                            child: Icon(
+                              widget.locationPinIcon,
+                              size: 50,
+                              color: widget.locationPinIconColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               if (widget.showZoomButtons)
                 Positioned(
                   bottom: 180,
@@ -389,7 +627,7 @@ class _OpenStreetMapSearchAndPickState
                     ),
                   ),
                 ),
-              if (widget.showSearchBar)
+              if (widget.showSearchBar && !widget.isReadOnly)
                 Positioned(
                   top: 0,
                   left: 0,
@@ -397,7 +635,7 @@ class _OpenStreetMapSearchAndPickState
                   child: Container(
                     margin: const EdgeInsets.all(15),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: widget.backgroundColor,
                       borderRadius: BorderRadius.circular(5),
                     ),
                     child: Column(
@@ -487,7 +725,7 @@ class _OpenStreetMapSearchAndPickState
                     ),
                   ),
                 ),
-              if (widget.showSetLocationButton)
+              if (widget.showSetLocationButton && !widget.isReadOnly)
                 Positioned(
                   bottom: 0,
                   left: 0,
@@ -564,6 +802,86 @@ class LatLong {
   final double latitude;
   final double longitude;
   const LatLong(this.latitude, this.longitude);
+}
+
+/// Represents a zone to be drawn on the map as a circle.
+class ZoneData {
+  /// The center of the zone.
+  final LatLong center;
+
+  /// The radius of the zone in meters.
+  final double radius;
+
+  /// The color of the circle.
+  final Color color;
+
+  /// The border color of the circle.
+  final Color borderColor;
+
+  /// The border stroke width of the circle.
+  final double borderStrokeWidth;
+
+  /// Whether to use a fill color for the circle.
+  final bool useFillColor;
+
+  /// Custom detail widget shown when the zone is tapped.
+  final Widget? detailWidget;
+
+  /// Detailed description of the zone, shown on tap.
+  final String detail;
+
+  /// Title of the zone, shown on tap.
+  final String title;
+
+  /// Callback called when the zone is tapped.
+  final void Function()? onTap;
+
+  ZoneData({
+    required this.center,
+    required this.radius,
+    this.color = const Color(0x332196F3),
+    this.borderColor = const Color(0xFF2196F3),
+    this.borderStrokeWidth = 0.0,
+    this.useFillColor = true,
+    this.detailWidget,
+    this.detail = '',
+    this.title = '',
+    this.onTap,
+  });
+}
+
+/// Represents a pin to be drawn on the map.
+class PinData {
+  /// The GPS coordinates of the pin.
+  final LatLong latLong;
+
+  /// The title of the pin, displayed as a tooltip or label.
+  final String title;
+
+  /// Detailed description of the pin.
+  final String detail;
+
+  /// The color of the pin icon.
+  final Color color;
+
+  /// The icon to use for the pin.
+  final IconData icon;
+
+  /// Custom detail widget shown when the pin is tapped.
+  final Widget? detailWidget;
+
+  /// Callback called when the pin is tapped.
+  final void Function()? onTap;
+
+  PinData({
+    required this.latLong,
+    this.title = '',
+    this.detail = '',
+    this.color = Colors.red,
+    this.icon = Icons.location_on,
+    this.detailWidget,
+    this.onTap,
+  });
 }
 
 /// Data returned when a location is picked.

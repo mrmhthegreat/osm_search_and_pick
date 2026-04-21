@@ -1,3 +1,14 @@
+## 0.3.0
+
+- Added support for multiple **Zones** (Circles) with custom radius, color, and borders.
+- Added support for multiple custom **Pins** with icons, titles, and details.
+- Added **Preview Mode** (`isReadOnly`) to use the map as a viewer without picker/search UI.
+- Added custom **Background Color** for the search bar and results container.
+- Supported **Dynamic Updates** for all map elements.
+- **Improved Zones**: Radii now use **meters** (`useRadiusInMeter: true`) for accurate scaling.
+- **Interactive Markers**: Pins and zones now support tap interactions to show/hide details.
+- **Customizable Details**: Added `detailWidget`, `title`, and `detail` fields to `ZoneData` and `PinData` for flexible popup designs.
+
 ## 0.2.1
 
 - Added custom `userAgentPackageName` in Http client and TileLayer to comply with OpenStreetMap Tile Usage Policy (Fixes 403 Forbidden errors).
