@@ -17,10 +17,11 @@ A Flutter place search and location picker plugin that uses Open Street Map. It 
 ---
 
 ### Picker Mode
-![Picker Mode](screenshots/DEMO%20WITH%20PICKER.png)
+![Picker Mode](https://raw.githubusercontent.com/mrmhthegreat/osm_search_and_pick/refs/heads/main/screenshots/DEMO%20WITH%20PICKER.png)
 
 ### Read-Only Mode
-![Read-Only Mode](screenshots/DEMO%20READ%20ONLY.png)
+![Read-Only Mode]([screenshots/DEMO%20READ%20ONLY.png](https://raw.githubusercontent.com/mrmhthegreat/osm_search_and_pick/main/screenshots/DEMO%20READ%20ONLY.png))
+
 
 ---
 
