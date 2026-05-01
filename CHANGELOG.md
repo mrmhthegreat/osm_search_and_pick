@@ -1,3 +1,13 @@
+## 0.4.0
+
+- **Advanced Dynamic Routing**: Added `RoutingStyle` and `RoutingPanelStyle` to let developers completely customize the color, markers, and panel UI of the routing module!
+- **Fully Custom Pins**: `PinData` now accepts an optional `Widget? child` parameter to skip standard icons and parse fully developed custom UI components!
+- **Event Callbacks/Streams**: Added `onMapCreated`, `onLocationChanged`, `onMapMoved`, and `onSearchStatusChanged` so developers can sync app UI perfectly with internal map activity!
+- **Live Location Tracking**: Added `liveTracking` toggle that commands the map camera to automatically follow the user smoothly as they physically move!
+- **State Priorities**: Fixed initialization sequence bug where hardware GPS overridden explicitly defined `initialCenter` maps. `initialCenter` now strictly guarantees the primary load focus!
+- **Center Marker Upgrade**: Added `locationPinWidget` to let developers completely replace the central selection cursor. The central marking cursor also automatically hides seamlessly while the Routing Panel is open!
+- **Engine Modernization**: Fully overhauled internals to run smoothly on modern Flutter 3.27+ standards, removing deprecated API hits like `CancellableNetworkTileProvider` and resolving package conflicts.
+
 ## 0.3.1
 - Fix Images 
 

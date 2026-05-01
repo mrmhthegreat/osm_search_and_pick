@@ -43,6 +43,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   bool _isReadOnly = false;
+  bool _liveTracking = false;
   double _radius = 10;
 
   @override
@@ -58,6 +59,16 @@ class _MyHomePageState extends State<MyHomePage> {
                 _isReadOnly = !_isReadOnly;
               });
             },
+            tooltip: 'Toggle Read-Only',
+          ),
+          IconButton(
+            icon: Icon(_liveTracking ? Icons.gps_fixed : Icons.gps_not_fixed),
+            onPressed: () {
+              setState(() {
+                _liveTracking = !_liveTracking;
+              });
+            },
+            tooltip: 'Toggle Live Tracking',
           ),
           IconButton(
             icon: const Icon(Icons.add),
@@ -84,25 +95,66 @@ class _MyHomePageState extends State<MyHomePage> {
         buttonText: 'Set Current Location',
         buttonBorderRadius: 10,
         buttonElevation: 5,
-        initialCenter: const LatLong(25.1972, 55.2744),
         initialZoom: 16,
         userAgentPackageName: 'com.example.osm_search_and_pick',
-        backgroundColor: Colors.blue.withOpacity(0.1),
+        backgroundColor: Colors.blue.withValues(alpha: 0.1),
         isReadOnly: _isReadOnly,
+        liveTracking: _liveTracking,
+        locationPinWidget: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.person_pin_circle, color: Colors.indigo, size: 50),
+            Text('Me!', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo)),
+          ],
+        ),
+        routingStyle: RoutingStyle(
+          routeColor: Colors.deepPurple,
+          routeWidth: 6.0,
+          borderColor: Colors.deepPurple.withValues(alpha: 0.4),
+          borderStrokeWidth: 3.0,
+          startMarkerWidget: const Icon(Icons.flag_circle, color: Colors.green, size: 36),
+          endMarkerWidget: const Icon(Icons.api, color: Colors.red, size: 36),
+          intermediateMarkerWidget: const Icon(Icons.circle, color: Colors.amber, size: 24),
+        ),
+        routingPanelStyle: const RoutingPanelStyle(
+          backgroundColor: Colors.black87,
+          textColor: Colors.white,
+          primaryColor: Colors.deepPurpleAccent,
+          borderRadius: 24.0,
+        ),
+        onRoutingStateChanged: (state) {
+          debugPrint('Routing State: ${state.waypoints.length} waypoints, mode: ${state.travelMode.name}');
+          if (state.result != null) {
+            debugPrint('Distance: ${state.result!.formattedDistance}, ETA: ${state.result!.formattedDuration}');
+          }
+        },
+        onMapCreated: (controller) {
+          debugPrint('Map is fully created and ready!');
+        },
+        onLocationChanged: (position) {
+          debugPrint('Live Track: ${position.latitude}, ${position.longitude} (Speed: ${position.speed})');
+        },
+        onMapMoved: (center) {
+          debugPrint('Map Moved to: ${center.latitude}, ${center.longitude}');
+        },
+        onSearchStatusChanged: (isSearching) {
+          debugPrint('Is searching: $isSearching');
+        },
+        initialCenter: const LatLong(-33.8688, 151.2093), // Sydney CBD
         zones: [
           ZoneData(
-            center: const LatLong(25.1972, 55.2744),
+            center: const LatLong(-33.8688, 151.2093), // CBD
             radius: _radius,
-            color: Colors.blue.withOpacity(0.3),
+            color: Colors.blue.withValues(alpha: 0.3),
             borderColor: Colors.blue,
             borderStrokeWidth: 2,
             title: 'Blue Zone',
             detail: 'This is the blue zone area',
           ),
           ZoneData(
-            center: const LatLong(25.1985, 55.2796),
+            center: const LatLong(-33.8732, 151.1998), // Darling Harbour
             radius: 50,
-            color: Colors.red.withOpacity(0.3),
+            color: Colors.red.withValues(alpha: 0.3),
             borderColor: Colors.red,
             borderStrokeWidth: 2,
             title: 'Red Zone',
@@ -122,7 +174,7 @@ class _MyHomePageState extends State<MyHomePage> {
         ],
         pins: [
           PinData(
-            latLong: const LatLong(25.1960, 55.2730),
+            latLong: const LatLong(-33.8568, 151.2153), // Opera House
             title: 'Custom Pin',
             detail: 'Tapped!',
             color: Colors.blue,
@@ -149,10 +201,35 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
           ),
           PinData(
-            latLong: const LatLong(25.1945, 55.2710),
+            latLong: const LatLong(-33.8523, 151.2108), // Harbour Bridge
+            title: 'Fully Custom Pin Widget',
+            detail: 'This is not an icon',
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: const BoxDecoration(
+                color: Colors.orange,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.star, color: Colors.white, size: 24),
+            ),
+          ),
+          PinData(
+            latLong: const LatLong(-33.8731, 151.2113), // Hyde Park
             title: 'Standard Pin',
             detail: 'Tap to see more',
             color: Colors.red,
+          ),
+        ],
+        routes: [
+          RouteData(
+            points: const [
+              LatLong(-33.8688, 151.2093),
+              LatLong(-33.8732, 151.1998),
+              LatLong(-33.8568, 151.2153),
+            ],
+            color: Colors.red,
+            strokeWidth: 4.0,
+            isDotted: false,
           ),
         ],
         onPicked: (pickedData) {
@@ -161,6 +238,8 @@ class _MyHomePageState extends State<MyHomePage> {
           debugPrint(pickedData.address.toString());
           debugPrint(pickedData.addressName);
         },
+        showRoutingButton: true,
+        routingBaseUri: 'https://router.project-osrm.org',
       ),
     );
   }

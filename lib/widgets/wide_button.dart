@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+/// A full-width (or constrained) elevated button widget.
 class WideButton extends StatelessWidget {
   const WideButton(
     this.text, {
@@ -15,7 +16,6 @@ class WideButton extends StatelessWidget {
     this.elevation = 2.0,
   });
 
-  /// Should be inside a column, row or flex widget
   final String text;
   final double padding;
   final double height;
@@ -29,9 +29,12 @@ class WideButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
     return SizedBox(
       height: height,
-      width: MediaQuery.of(context).size.width <= 500 ? MediaQuery.of(context).size.width : width,
+      // BUG FIX: cap at screen width on narrow screens, but also honour explicit
+      // width on wider screens rather than always defaulting to screen width.
+      width: screenWidth <= 500 ? screenWidth : width,
       child: Padding(
         padding: EdgeInsets.all(padding),
         child: ElevatedButton(

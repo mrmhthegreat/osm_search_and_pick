@@ -7,20 +7,23 @@ A Flutter place search and location picker plugin that uses Open Street Map. It 
 - 📍 **Pick location from map**: Interactive map for selecting precise coordinates.
 - 🔍 **Search location by places**: Integrated search bar for finding addresses via Nominatim.
 - 🚀 **Easy to use**: Minimal setup required to get started.
-- 🎨 **Highly Customizable**: Change icons, colors, text styles, and more.
+- 🎨 **Highly Customizable**: Change icons, colors, text styles, and completely inject your own widgets.
+- 🗺️ **Dynamic OSRM Routing**: Render deep interactive routes with custom completely styled UI modes! 
+- 🎯 **Continuous Live Tracking**: Follow mobile users dynamically via active GPS tracking modes.
 - ⭕ **Zones Support**: Draw multiple circles with custom radius (**meters**), color and borders.
-- 📌 **Multiple Pins**: Add multiple markers with custom icons, titles, and details.
+- 📌 **Multiple Pins**: Add multiple markers with custom icons, customized widgets, titles, and details.
 - 👆 **Interactive Markers**: Markers and zones can show details on tap with custom designed widgets.
+- 🎧 **Stream Event Listeners**: Easily listen to streams outputting precise user dragging, location limits, and UI statuses.
 - 👁️ **Preview Mode**: Use the map in read-only mode for viewing only.
 - 📱 **Platform Support**: Works on Android, iOS, and Web.
 
 ---
 
 ### Picker Mode
-![Picker Mode](https://raw.githubusercontent.com/mrmhthegreat/osm_search_and_pick/refs/heads/main/screenshots/DEMO%20WITH%20PICKER.png)
+![Picker Mode](https://raw.githubusercontent.com/mrmhthegreat/osm_search_and_pick/refs/heads/main/screenshots/d.png)
 
 ### Read-Only Mode
-![Read-Only Mode]([screenshots/DEMO%20READ%20ONLY.png](https://raw.githubusercontent.com/mrmhthegreat/osm_search_and_pick/main/screenshots/DEMO%20READ%20ONLY.png))
+![Read-Only Mode](https://raw.githubusercontent.com/mrmhthegreat/osm_search_and_pick/refs/heads/main/screenshots/f.png)
 
 
 ---
@@ -154,6 +157,50 @@ PinData(
 )
 ```
 
+You can entirely override the icon logic by passing a custom layout into the `PinData.child` property or completely redesign the central picker via `locationPinWidget`:
+
+```dart
+OpenStreetMapSearchAndPick(
+    locationPinWidget: Icon(Icons.person_pin_circle, color: Colors.indigo, size: 50),
+    pins: [
+        PinData(
+            latLong: LatLong(23.1, 89.1),
+            child: Container(
+              padding: EdgeInsets.all(4),
+              decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.orange),
+              child: Icon(Icons.star, color: Colors.white, size: 24),
+            ),
+        ),
+    ]
+)
+```
+
+### OSRM Routing & Dynamic Panels
+
+This package supports deep integration with OSRM (Open Source Routing Machine). To enable it, provide a base routing URL. Users can build their own routes by long-pressing points, or tapping custom marker bounds!
+
+```dart
+OpenStreetMapSearchAndPick(
+    showRoutingButton: true,
+    routingBaseUri: 'https://router.project-osrm.org',
+    routingStyle: RoutingStyle(
+        routeColor: Colors.deepPurple,
+        routeWidth: 6.0,
+        startMarkerWidget: Icon(Icons.flag_circle, color: Colors.green),
+        endMarkerWidget: Icon(Icons.api, color: Colors.red),
+    ),
+    routingPanelStyle: RoutingPanelStyle( // Customize the Routing pop-up drawer perfectly!
+        backgroundColor: Colors.black87,
+        textColor: Colors.white,
+    ),
+    onRoutingStateChanged: (state) {
+        if (state.result != null) {
+            print('ETA: ${state.result!.formattedDuration}');
+        }
+    },
+)
+```
+
 ```dart
 ZoneData(
   center: LatLong(23, 89),
@@ -189,12 +236,38 @@ OpenStreetMapSearchAndPick(
 
 ---
 
+## Streaming Listeners & Continuous Tracking
+
+Tap directly into maps streams without breaking integration by utilizing event listeners:
+
+```dart
+OpenStreetMapSearchAndPick(
+  // Automatically pivots camera natively mapped to Geolocation GPS
+  liveTracking: true, 
+
+  // Fires continuous GPS output as they physically drive/walk
+  onLocationChanged: (Position position) => print(position.speed),
+  
+  // Fires perfectly whenever the map camera physically resets stops
+  onMapMoved: (LatLong center) => print("Dragged to $center"),
+  
+  // Exposes MapController for completely external triggering (ex: an external jump-to button)
+  onMapCreated: (MapController controller) {},
+  
+  // Displays network fetching active states (great for triggering external loaders!)
+  onSearchStatusChanged: (bool isSearching) {},
+  //...
+)
+```
+
+---
+
 ## Customization Options
 
 | Property | Description | Default |
 |----------|-------------|---------|
 | `onPicked` | Callback function when a location is selected. | **Required** |
-| `initialCenter` | Starting coordinates for the map. | User's current location |
+| `initialCenter` | Starting coordinates for the map. Strongly overrides hardware GPS on initialization! | User's current location |
 | `initialZoom` | Initial zoom level of the map. | `15.0` |
 | `maxZoom` | Maximum zoom level allowed. | `18.0` |
 | `minZoom` | Minimum zoom level allowed. | `6.0` |
@@ -216,8 +289,17 @@ OpenStreetMapSearchAndPick(
 | `showSetLocationButton` | Whether to show the main "Set Location" button. | `true` |
 | `backgroundColor` | Background color for search bar and results. | `Colors.white` |
 | `isReadOnly` | Enables read-only mode (hides picker/search UI). | `false` |
+| `liveTracking` | Enables continuous camera snap-tracking of user GPS. | `false` |
+| `locationPinWidget` | A completely custom widget to replace the stationary central pin cursor. | `null` |
 | `zones` | List of `ZoneData` to draw circles on the map. | `[]` |
 | `pins` | List of `PinData` to draw custom markers. | `[]` |
+| `routingStyle` | Provides completely custom color rendering/theming of active map routes. | `null` |
+| `routingPanelStyle` | Allows modifying completely the UI styling for the sliding Route drawer. | `null` |
+| `onMapCreated` | Event Handler: Returns instance of MapController. | `null` |
+| `onMapMoved` | Event Handler: Returns continuous updates of Map pan/drag limits. | `null` |
+| `onLocationChanged` | Event Handler: Returns the explicit GPS device properties during Live Tracking. | `null` |
+| `onSearchStatusChanged` | Event Handler: Updates true/false as network searches initiate. | `null` |
+| `onRoutingStateChanged` | Event Handler: Emits live instances of generated Turn-by-Turn metrics. | `null` |
 
 ---
 
@@ -230,7 +312,22 @@ The `onPicked` callback returns a `PickedData` object containing:
 - `address`: A `Map<String, dynamic>` containing detailed address parts (city, country, etc.).
 
 ---
+### Demo A
+![Demo A](https://raw.githubusercontent.com/mrmhthegreat/osm_search_and_pick/refs/heads/main/screenshots/a.png)
+
+### Demo B
+![Demo B](https://raw.githubusercontent.com/mrmhthegreat/osm_search_and_pick/refs/heads/main/screenshots/b.png)
+
+### Demo C
+![Demo C](https://raw.githubusercontent.com/mrmhthegreat/osm_search_and_pick/refs/heads/main/screenshots/c.png)
+
+
 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## Keywords
+Flutter Location Picker, OpenStreetMap, OSM, Flutter Map, Map Routing, OSRM, Nominatim, Place Search, Address Search, Live Tracking, Map Markers, Flutter Geolocation, Custom Map Pins, Flutter Maps Plugin, Location Selection, GPS Tracking.

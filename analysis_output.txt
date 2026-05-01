@@ -1,0 +1,21 @@
+Analyzing osm_search_and_pick...                                
+
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • example/lib/main.dart:90:38 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • example/lib/main.dart:96:32 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • example/lib/main.dart:105:31 • deprecated_member_use
+   info • Statements in an if should be enclosed in a block • lib/open_street_map_search_and_pick.dart:203:20 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block • lib/open_street_map_search_and_pick.dart:261:56 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block • lib/open_street_map_search_and_pick.dart:262:48 • curly_braces_in_flow_control_structures
+  error • The named parameter 'isDotted' isn't defined • lib/open_street_map_search_and_pick.dart:276:169 • undefined_named_parameter
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/open_street_map_search_and_pick.dart:277:153 • deprecated_member_use
+warning • Unused import: 'package:osm_search_and_pick/models/lat_long.dart' • lib/routing/routing_manager.dart:10:8 • unused_import
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/routing/routing_panel.dart:56:52 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/routing/routing_panel.dart:193:74 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/routing/routing_panel.dart:294:24 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/routing/routing_panel.dart:296:43 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/routing/routing_panel.dart:324:42 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/routing/routing_panel.dart:327:46 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/routing/routing_panel.dart:363:28 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/routing/routing_panel.dart:421:60 • deprecated_member_use
+
+17 issues found. (ran in 3.3s)

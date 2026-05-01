@@ -8,111 +8,93 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
+import 'package:osm_search_and_pick/models/lat_long.dart';
+import 'package:osm_search_and_pick/models/osm_data.dart';
+import 'package:osm_search_and_pick/models/picked_data.dart';
+import 'package:osm_search_and_pick/models/zone_data.dart';
+import 'package:osm_search_and_pick/models/pin_data.dart';
+import 'package:osm_search_and_pick/models/route_data.dart';
+import 'package:osm_search_and_pick/routing/routing_manager.dart';
+import 'package:osm_search_and_pick/routing/routing_panel.dart';
 import 'package:osm_search_and_pick/widgets/wide_button.dart';
+import 'package:osm_search_and_pick/models/routing_style.dart';
 
-/// A Flutter place search and location picker widget that uses Open Street Map.
-///
-/// It allows users to search for places using Nominatim and select a precise
-/// location by moving the map and pinning it.
+export 'package:osm_search_and_pick/models/osm_data.dart';
+export 'package:osm_search_and_pick/models/picked_data.dart';
+export 'package:osm_search_and_pick/models/zone_data.dart';
+export 'package:osm_search_and_pick/models/pin_data.dart';
+export 'package:osm_search_and_pick/models/route_data.dart';
+export 'package:osm_search_and_pick/models/lat_long.dart';
+export 'package:osm_search_and_pick/routing/routing_manager.dart';
+export 'package:osm_search_and_pick/routing/route_result.dart';
+export 'package:osm_search_and_pick/models/routing_style.dart';
+
 class OpenStreetMapSearchAndPick extends StatefulWidget {
-  /// Callback function called when the user selects a location.
+  /// Callback triggered when a location is picked.
   final void Function(PickedData pickedData) onPicked;
 
-  /// Icon for the zoom-in button.
+  /// Optional fully custom widget to use for the main location pin.
+  /// If provided, [locationPinIcon] and [locationPinIconColor] are ignored.
+  final Widget? locationPinWidget;
+
+  /// Defines the look and feel of the routing paths and markers.
+  final RoutingStyle? routingStyle;
+
+  /// Defines the look and feel of the routing bottom sheet panel.
+  final RoutingPanelStyle? routingPanelStyle;
+
+  /// Callback triggered whenever the routing state (distance, time, points) changes.
+  final void Function(RoutingState state)? onRoutingStateChanged;
+
+  /// Triggered after the map constructs, exposing the internal MapController.
+  final void Function(MapController)? onMapCreated;
+
+  /// Triggers repeatedly, delivering live Position updates if [liveTracking] is enabled.
+  final void Function(Position)? onLocationChanged;
+
+  /// Triggers after any map movement (drag/pan), returning the new map center.
+  final void Function(LatLong)? onMapMoved;
+
+  /// Triggers with [true] when search fetching starts, and [false] when it stops.
+  final void Function(bool isSearching)? onSearchStatusChanged;
+
+  /// If true, the map will continually focus on the user's location via [Geolocator.getPositionStream].
+  final bool liveTracking;
   final IconData zoomInIcon;
-
-  /// Icon for the zoom-out button.
   final IconData zoomOutIcon;
-
-  /// Icon for the current location button.
   final IconData currentLocationIcon;
-
-  /// Icon for the pin displayed in the center of the map.
   final IconData locationPinIcon;
-
-  /// Color for the zoom and action buttons.
   final Color buttonColor;
-
-  /// Color for the text/icons inside the buttons.
   final Color buttonTextColor;
-
-  /// Color for the center location pin icon.
   final Color locationPinIconColor;
-
-  /// Label text displayed above the center pin.
   final String locationPinText;
-
-  /// Text style for the label above the center pin.
   final TextStyle locationPinTextStyle;
-
-  /// Text displayed on the main "Set Location" button.
   final String buttonText;
-
-  /// Hint text for the search bar.
   final String hintText;
-
-  /// Height of the main "Set Location" button.
   final double buttonHeight;
-
-  /// Width of the main "Set Location" button.
   final double buttonWidth;
-
-  /// Text style for the text on the main "Set Location" button.
   final TextStyle buttonTextStyle;
-
-  /// The base URI for the Nominatim API. Defaults to 'https://nominatim.openstreetmap.org'.
   final String baseUri;
-
-  /// The initial location where the map should be centered.
-  /// If null, it will default to the user's current location.
   final LatLong? initialCenter;
-
-  /// Zoom level when the map is initialized. Defaults to 15.0.
   final double initialZoom;
-
-  /// Maximum zoom level of the map. Defaults to 18.0.
   final double maxZoom;
-
-  /// Minimum zoom level of the map. Defaults to 6.0.
   final double minZoom;
-
-  /// The URL template for the TileLayer. Defaults to 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'.
   final String tileUrlTemplate;
-
-  /// Border radius of the main 'Set Location' button. Defaults to 5.0.
   final double buttonBorderRadius;
-
-  /// Elevation of the main 'Set Location' button. Defaults to 2.0.
   final double buttonElevation;
-
-  /// Whether to show the zoom in/out buttons. Defaults to true.
   final bool showZoomButtons;
-
-  /// Whether to show the current location button. Defaults to true.
   final bool showCurrentLocationButton;
-
-  /// Whether to show the search bar. Defaults to true.
   final bool showSearchBar;
-
-  /// Whether to show the main "Set Location" button at the bottom. Defaults to true.
   final bool showSetLocationButton;
-
-  /// The application package name used to identify the app to the OSM tile server.
-  /// It is highly recommended to set this to your app's package name to comply with
-  /// OSM Tile Usage Policy and avoid getting a 403 Forbidden error.
   final String userAgentPackageName;
-
-  /// The background color of the search bar and results. Defaults to [Colors.white].
   final Color backgroundColor;
-
-  /// A list of zones to be drawn on the map as circles.
   final List<ZoneData> zones;
-
-  /// A list of pins to be drawn on the map.
   final List<PinData> pins;
-
-  /// Whether the map is in read-only mode (hides search and picker UI).
   final bool isReadOnly;
+  final List<RouteData> routes;
+  final String? routingBaseUri;
+  final bool showRoutingButton;
+  final void Function(RouteResult result)? onRouteFetched;
 
   const OpenStreetMapSearchAndPick({
     super.key,
@@ -123,11 +105,9 @@ class OpenStreetMapSearchAndPick extends StatefulWidget {
     this.buttonColor = Colors.blue,
     this.locationPinIconColor = Colors.blue,
     this.locationPinText = 'Location',
-    this.locationPinTextStyle = const TextStyle(
-        fontSize: 16, fontWeight: FontWeight.bold, color: Colors.blue),
+    this.locationPinTextStyle = const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.blue),
     this.hintText = 'Search Location',
-    this.buttonTextStyle = const TextStyle(
-        fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+    this.buttonTextStyle = const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
     this.buttonTextColor = Colors.white,
     this.buttonText = 'Set Current Location',
     this.buttonHeight = 50,
@@ -150,750 +130,352 @@ class OpenStreetMapSearchAndPick extends StatefulWidget {
     this.zones = const [],
     this.pins = const [],
     this.isReadOnly = false,
+    this.routes = const [],
+    this.routingBaseUri,
+    this.showRoutingButton = false,
+    this.onRouteFetched,
+    this.routingStyle,
+    this.routingPanelStyle,
+    this.onRoutingStateChanged,
+    this.onMapCreated,
+    this.onLocationChanged,
+    this.onMapMoved,
+    this.onSearchStatusChanged,
+    this.liveTracking = false,
+    this.locationPinWidget,
   });
 
   @override
-  State<OpenStreetMapSearchAndPick> createState() =>
-      _OpenStreetMapSearchAndPickState();
+  State<OpenStreetMapSearchAndPick> createState() => _OpenStreetMapSearchAndPickState();
 }
 
-class _OpenStreetMapSearchAndPickState
-    extends State<OpenStreetMapSearchAndPick> {
-  MapController _mapController = MapController();
+class _OpenStreetMapSearchAndPickState extends State<OpenStreetMapSearchAndPick> {
+  late MapController _mapController;
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
-  List<OSMdata> _options = <OSMdata>[];
+  List<OSMdata> _options = [];
   Timer? _debounce;
-  var client = http.Client();
-  late Future<Position?> latlongFuture;
+  final http.Client _httpClient = http.Client();
+  late Future<Position?> _latlongFuture;
   Object? _selectedElement;
-
-  Future<Position?> getCurrentPosLatLong() async {
-    LocationPermission locationPermission = await Geolocator.checkPermission();
-
-    /// do not have location permission
-    if (locationPermission == LocationPermission.denied) {
-      locationPermission = await Geolocator.requestPermission();
-      return await getPosition(locationPermission);
-    }
-
-    /// have location permission
-    Position position = await Geolocator.getCurrentPosition();
-    setNameCurrentPosAtInit(position.latitude, position.longitude);
-    return position;
-  }
-
-  Future<Position?> getPosition(LocationPermission locationPermission) async {
-    if (locationPermission == LocationPermission.denied ||
-        locationPermission == LocationPermission.deniedForever) {
-      return null;
-    }
-    Position position = await Geolocator.getCurrentPosition();
-    setNameCurrentPosAtInit(position.latitude, position.longitude);
-    return position;
-  }
-
-  void setNameCurrentPos() async {
-    double latitude = _mapController.camera.center.latitude;
-    double longitude = _mapController.camera.center.longitude;
-    if (kDebugMode) {
-      print(latitude);
-    }
-    if (kDebugMode) {
-      print(longitude);
-    }
-    String url =
-        '${widget.baseUri}/reverse?format=json&lat=$latitude&lon=$longitude&zoom=18&addressdetails=1';
-
-    var response = await client.get(Uri.parse(url), headers: {
-      'User-Agent': widget.userAgentPackageName,
-    });
-    // var response = await client.post(Uri.parse(url));
-    var decodedResponse =
-        jsonDecode(utf8.decode(response.bodyBytes)) as Map<dynamic, dynamic>;
-
-    _searchController.text =
-        decodedResponse['display_name'] ?? "MOVE TO CURRENT POSITION";
-    setState(() {});
-  }
-
-  void setNameCurrentPosAtInit(double latitude, double longitude) async {
-    if (kDebugMode) {
-      print(latitude);
-    }
-    if (kDebugMode) {
-      print(longitude);
-    }
-
-    String url =
-        '${widget.baseUri}/reverse?format=json&lat=$latitude&lon=$longitude&zoom=18&addressdetails=1';
-
-    var response = await client.get(Uri.parse(url), headers: {
-      'User-Agent': widget.userAgentPackageName,
-    });
-    // var response = await client.post(Uri.parse(url));
-    var decodedResponse =
-        jsonDecode(utf8.decode(response.bodyBytes)) as Map<dynamic, dynamic>;
-
-    _searchController.text =
-        decodedResponse['display_name'] ?? "MOVE TO CURRENT POSITION";
-  }
+  StreamSubscription? _mapEventSubscription;
+  StreamSubscription<Position>? _positionStreamSubscription;
+  RoutingManager? _routingManager;
+  bool _routingPanelVisible = false;
 
   @override
   void initState() {
-    _mapController = MapController();
-
-    _mapController.mapEventStream.listen(
-      (event) async {
-        if (event is MapEventMoveEnd) {
-          var client = http.Client();
-          String url =
-              '${widget.baseUri}/reverse?format=json&lat=${event.camera.center.latitude}&lon=${event.camera.center.longitude}&zoom=18&addressdetails=1';
-
-          var response = await client.get(Uri.parse(url), headers: {
-            'User-Agent': widget.userAgentPackageName,
-          });
-          // var response = await client.post(Uri.parse(url));
-          var decodedResponse = jsonDecode(utf8.decode(response.bodyBytes))
-              as Map<dynamic, dynamic>;
-
-          _searchController.text = decodedResponse['display_name'];
-          setState(() {});
-        }
-      },
-    );
-
-    latlongFuture = getCurrentPosLatLong();
-
     super.initState();
+    _mapController = MapController();
+    _mapEventSubscription = _mapController.mapEventStream.listen((event) async {
+      if (event is MapEventMoveEnd) {
+        if (widget.onMapMoved != null) {
+          widget.onMapMoved!(LatLong(event.camera.center.latitude, event.camera.center.longitude));
+        }
+        await _reverseGeocode(event.camera.center.latitude, event.camera.center.longitude);
+      }
+    });
+    _latlongFuture = _getCurrentPosition();
+    if (widget.routingBaseUri != null) {
+      _routingManager = RoutingManager(
+        baseUri: widget.routingBaseUri!,
+        userAgentPackageName: widget.userAgentPackageName,
+        httpClient: _httpClient,
+      );
+      _routingManager!.addListener(_onRoutingStateChanged);
+    }
+    if (widget.liveTracking) {
+      _startLiveTracking();
+    }
+  }
+
+  void _startLiveTracking() {
+    _positionStreamSubscription = Geolocator.getPositionStream(
+      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high, distanceFilter: 10),
+    ).listen((Position position) {
+      if (widget.onLocationChanged != null) {
+        widget.onLocationChanged!(position);
+      }
+      if (mounted) {
+        _mapController.move(LatLng(position.latitude, position.longitude), _mapController.camera.zoom);
+      }
+    });
+  }
+
+  void _onRoutingStateChanged() {
+    final state = _routingManager?.state;
+    if (state != null && widget.onRoutingStateChanged != null) {
+      widget.onRoutingStateChanged!(state);
+    }
+
+    final result = state?.result;
+    if (result != null) {
+      widget.onRouteFetched?.call(result);
+      try {
+        final bounds = boundsFromPoints(result.points);
+        _mapController.fitCamera(CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(60)));
+      } catch (_) {}
+    }
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
+    _positionStreamSubscription?.cancel();
+    _debounce?.cancel();
+    _mapEventSubscription?.cancel();
     _mapController.dispose();
+    _searchController.dispose();
+    _focusNode.dispose();
+    _routingManager?.removeListener(_onRoutingStateChanged);
+    _routingManager?.dispose();
+    _httpClient.close();
     super.dispose();
+  }
+
+  Future<Position?> _getCurrentPosition() async {
+    try {
+      var perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.denied) perm = await Geolocator.requestPermission();
+      if (perm == LocationPermission.denied || perm == LocationPermission.deniedForever) return null;
+      final pos = await Geolocator.getCurrentPosition();
+      await _reverseGeocode(pos.latitude, pos.longitude);
+      return pos;
+    } catch (e) {
+      if (kDebugMode) print('getCurrentPosition: $e');
+      return null;
+    }
+  }
+
+  Future<void> _reverseGeocode(double lat, double lon) async {
+    try {
+      final r = await _httpClient.get(
+        Uri.parse('${widget.baseUri}/reverse?format=json&lat=$lat&lon=$lon&zoom=18&addressdetails=1'),
+        headers: {'User-Agent': widget.userAgentPackageName},
+      );
+      final d = jsonDecode(utf8.decode(r.bodyBytes)) as Map;
+      if (mounted) setState(() { _searchController.text = d['display_name'] ?? 'Unknown'; });
+    } catch (_) {}
+  }
+
+  Future<void> _search(String query) async {
+    if (query.isEmpty) {
+      if (mounted) {
+        setState(() => _options = []);
+      }
+      return;
+    }
+    if (widget.onSearchStatusChanged != null) widget.onSearchStatusChanged!(true);
+    try {
+      final r = await _httpClient.get(
+        Uri.parse('${widget.baseUri}/search?q=${Uri.encodeComponent(query)}&format=json&polygon_geojson=1&addressdetails=1'),
+        headers: {'User-Agent': widget.userAgentPackageName},
+      );
+      final decoded = jsonDecode(utf8.decode(r.bodyBytes)) as List;
+      if (mounted) {
+        setState(() {
+          _options = decoded.map((e) => OSMdata(
+            displayname: e['display_name'] as String,
+            lat: double.parse(e['lat'] as String),
+            lon: double.parse(e['lon'] as String),
+          )).toList();
+        });
+      }
+    } catch (_) {}
+    if (widget.onSearchStatusChanged != null) widget.onSearchStatusChanged!(false);
+  }
+
+  Future<PickedData> _pickData() async {
+    final center = LatLong(_mapController.camera.center.latitude, _mapController.camera.center.longitude);
+    try {
+      final r = await _httpClient.get(
+        Uri.parse('${widget.baseUri}/reverse?format=json&lat=${center.latitude}&lon=${center.longitude}&zoom=18&addressdetails=1'),
+        headers: {'User-Agent': widget.userAgentPackageName},
+      );
+      final d = jsonDecode(utf8.decode(r.bodyBytes)) as Map;
+      return PickedData(center, d['display_name'] as String? ?? '', Map<String, dynamic>.from(d['address'] as Map? ?? {}));
+    } catch (_) {
+      return PickedData(center, _searchController.text, {});
+    }
+  }
+
+  void _showPinRoutingMenu(PinData pin) {
+    final rm = _routingManager;
+    if (rm == null) return;
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (_) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Container(margin: const EdgeInsets.symmetric(vertical: 8), width: 36, height: 4,
+            decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2))),
+        if (pin.title.isNotEmpty)
+          Padding(padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+              child: Text(pin.title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15))),
+        ListTile(leading: const Icon(Icons.trip_origin, color: Colors.green), title: const Text('Route from here'),
+            onTap: () { Navigator.pop(context); rm.setStartFromPin(pin); setState(() => _routingPanelVisible = true); }),
+        ListTile(leading: const Icon(Icons.location_on, color: Colors.red), title: const Text('Route to here'),
+            onTap: () { Navigator.pop(context); rm.setEndFromPin(pin); setState(() => _routingPanelVisible = true); }),
+        ListTile(leading: const Icon(Icons.add_location_alt, color: Colors.orange), title: const Text('Add as waypoint'),
+            onTap: () { Navigator.pop(context); rm.addWaypoint(LatLng(pin.latLong.latitude, pin.latLong.longitude)); setState(() => _routingPanelVisible = true); }),
+      ])),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    // String? _autocompleteSelection;
-    OutlineInputBorder inputBorder = OutlineInputBorder(
-      borderSide: BorderSide(color: widget.buttonColor),
-    );
-    OutlineInputBorder inputFocusBorder = OutlineInputBorder(
-      borderSide: BorderSide(color: widget.buttonColor, width: 3.0),
-    );
+    final inputBorder = OutlineInputBorder(borderSide: BorderSide(color: widget.buttonColor));
+    final focusBorder = OutlineInputBorder(borderSide: BorderSide(color: widget.buttonColor, width: 3.0));
+    final rm = _routingManager;
+    final rs = rm?.state ?? const RoutingState();
+    final rStyle = widget.routingStyle ?? const RoutingStyle();
+
     return FutureBuilder<Position?>(
-      future: latlongFuture,
+      future: _latlongFuture,
       builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
         LatLng? mapCentre;
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
-        }
-        if (snapshot.hasError) {
-          return const Center(
-            child: Text("Something went wrong"),
-          );
-        }
-
-        if (snapshot.hasData && snapshot.data != null) {
+        if (widget.initialCenter != null) {
+          mapCentre = LatLng(widget.initialCenter!.latitude, widget.initialCenter!.longitude);
+        } else if (snapshot.hasData && snapshot.data != null) {
           mapCentre = LatLng(snapshot.data!.latitude, snapshot.data!.longitude);
-        } else if (widget.initialCenter != null) {
-          mapCentre = LatLng(
-              widget.initialCenter!.latitude, widget.initialCenter!.longitude);
         }
-        return SafeArea(
-          child: Stack(
+
+        return SafeArea(child: Stack(children: [
+          Positioned.fill(child: FlutterMap(
+            options: MapOptions(
+              initialCenter: mapCentre ?? const LatLng(0, 0),
+              initialZoom: widget.initialZoom, maxZoom: widget.maxZoom, minZoom: widget.minZoom,
+              onMapReady: () {
+                if (widget.onMapCreated != null) widget.onMapCreated!(_mapController);
+              },
+              onTap: (rm != null && rm.isPickingMode) ? (_, ll) => rm.addWaypointFromTap(ll) : null,
+            ),
+            mapController: _mapController,
             children: [
-              Positioned.fill(
-                child: FlutterMap(
-                  options: MapOptions(
-                      initialCenter: mapCentre ?? const LatLng(0, 0),
-                      initialZoom: widget.initialZoom,
-                      maxZoom: widget.maxZoom,
-                      minZoom: widget.minZoom),
-                  mapController: _mapController,
-                  children: [
-                    TileLayer(
-                      urlTemplate: widget.tileUrlTemplate,
-                      userAgentPackageName: widget.userAgentPackageName,
-                      // attributionBuilder: (_) {
-                      //   return Text("© OpenStreetMap contributors");
-                      // },
-                    ),
-                    CircleLayer(
-                      circles: widget.zones
-                          .map<CircleMarker>(
-                            (e) => CircleMarker(
-                              point: LatLng(
-                                  e.center.latitude, e.center.longitude),
-                              radius: e.radius,
-                              useRadiusInMeter: true,
-                              color: e.color,
-                              borderColor: e.borderColor,
-                              borderStrokeWidth: e.borderStrokeWidth,
-                            ),
-                          )
-                          .toList(),
-                    ),
-                    MarkerLayer(
-                      markers: [
-                        ...widget.pins.map<Marker>(
-                          (e) => Marker(
-                            key: ObjectKey(e),
-                            point:
-                                LatLng(e.latLong.latitude, e.latLong.longitude),
-                            alignment: Alignment.bottomCenter,
-                            width: 150,
-                            height: 150,
-                            child: GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _selectedElement =
-                                      _selectedElement == e ? null : e;
-                                });
-                                if (e.onTap != null) e.onTap!();
-                              },
-                              child: Stack(
-                                alignment: Alignment.bottomCenter,
-                                children: [
-                                  Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    children: [
-                                      if (_selectedElement == e)
-                                        Flexible(
-                                          child: e.detailWidget ??
-                                              Column(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  if (e.title.isNotEmpty)
-                                                    Container(
-                                                      padding: const EdgeInsets
-                                                          .symmetric(
-                                                          horizontal: 4,
-                                                          vertical: 2),
-                                                      decoration: BoxDecoration(
-                                                        color: Colors.black54,
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                                4),
-                                                      ),
-                                                      child: Text(
-                                                        e.title,
-                                                        style: const TextStyle(
-                                                            color: Colors.white,
-                                                            fontSize: 10),
-                                                        overflow:
-                                                            TextOverflow.ellipsis,
-                                                      ),
-                                                    ),
-                                                  if (e.detail.isNotEmpty)
-                                                    Container(
-                                                      padding: const EdgeInsets
-                                                          .symmetric(
-                                                          horizontal: 4,
-                                                          vertical: 2),
-                                                      decoration: BoxDecoration(
-                                                        color: Colors.white70,
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                                4),
-                                                      ),
-                                                      child: Text(
-                                                        e.detail,
-                                                        style: const TextStyle(
-                                                            color: Colors.black,
-                                                            fontSize: 8),
-                                                        overflow:
-                                                            TextOverflow.ellipsis,
-                                                      ),
-                                                    ),
-                                                ],
-                                              ),
-                                        ),
-                                      Icon(
-                                        e.icon,
-                                        color: e.color,
-                                        size: 30,
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        ...widget.zones.map<Marker>(
-                          (e) => Marker(
-                            key: ObjectKey(e),
-                            point: LatLng(
-                                e.center.latitude, e.center.longitude),
-                            alignment: Alignment.center,
-                            width: 120,
-                            height: 120,
-                            child: GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _selectedElement =
-                                      _selectedElement == e ? null : e;
-                                });
-                                if (e.onTap != null) e.onTap!();
-                              },
-                              child: Stack(
-                                alignment: Alignment.center,
-                                children: [
-                                  Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      if (_selectedElement == e)
-                                        Flexible(
-                                          child: e.detailWidget ??
-                                              Column(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  if (e.title.isNotEmpty)
-                                                    Container(
-                                                      padding: const EdgeInsets
-                                                          .symmetric(
-                                                          horizontal: 4,
-                                                          vertical: 2),
-                                                      decoration: BoxDecoration(
-                                                        color: Colors.black54,
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                                4),
-                                                      ),
-                                                      child: Text(
-                                                        e.title,
-                                                        style: const TextStyle(
-                                                            color: Colors.white,
-                                                            fontSize: 10),
-                                                        overflow:
-                                                            TextOverflow.ellipsis,
-                                                      ),
-                                                    ),
-                                                  if (e.detail.isNotEmpty)
-                                                    Container(
-                                                      padding: const EdgeInsets
-                                                          .symmetric(
-                                                          horizontal: 4,
-                                                          vertical: 2),
-                                                      decoration: BoxDecoration(
-                                                        color: Colors.white70,
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                                4),
-                                                      ),
-                                                      child: Text(
-                                                        e.detail,
-                                                        style: const TextStyle(
-                                                            color: Colors.black,
-                                                            fontSize: 8),
-                                                        overflow:
-                                                            TextOverflow.ellipsis,
-                                                      ),
-                                                    ),
-                                                  if (e.title.isEmpty &&
-                                                      e.detail.isEmpty)
-                                                    Container(
-                                                      padding: const EdgeInsets
-                                                          .symmetric(
-                                                          horizontal: 6,
-                                                          vertical: 4),
-                                                      decoration: BoxDecoration(
-                                                        color: Colors.black87,
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                                4),
-                                                      ),
-                                                      child: const Text(
-                                                        'Tap to see more detail',
-                                                        style: TextStyle(
-                                                            color: Colors.white,
-                                                            fontSize: 10),
-                                                      ),
-                                                    ),
-                                                ],
-                                              ),
-                                        ),
-                                      Container(
-                                        width: 12,
-                                        height: 12,
-                                        decoration: BoxDecoration(
-                                          color: e.borderColor,
-                                          shape: BoxShape.circle,
-                                          border: Border.all(
-                                              color: Colors.white, width: 2),
-                                          boxShadow: const [
-                                            BoxShadow(
-                                                color: Colors.black26,
-                                                blurRadius: 2)
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              if (!widget.isReadOnly)
-                Positioned.fill(
-                  child: IgnorePointer(
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(widget.locationPinText,
-                              style: widget.locationPinTextStyle,
-                              textAlign: TextAlign.center),
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 50),
-                            child: Icon(
-                              widget.locationPinIcon,
-                              size: 50,
-                              color: widget.locationPinIconColor,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+              TileLayer(urlTemplate: widget.tileUrlTemplate, userAgentPackageName: widget.userAgentPackageName, tileProvider: NetworkTileProvider()),
+              CircleLayer(circles: widget.zones.map((e) => CircleMarker(point: LatLng(e.center.latitude, e.center.longitude), radius: e.radius, useRadiusInMeter: true, color: e.color, borderColor: e.borderColor, borderStrokeWidth: e.borderStrokeWidth)).toList()),
+              PolylineLayer(polylines: [
+                ...widget.routes.map((r) => Polyline(points: r.points.map((p) => LatLng(p.latitude, p.longitude)).toList(), color: r.color, strokeWidth: r.strokeWidth, pattern: r.isDotted ? const StrokePattern.dotted() : const StrokePattern.solid())),
+                if (rs.result != null) Polyline(points: rs.result!.points, color: rStyle.routeColor, strokeWidth: rStyle.routeWidth, borderColor: rStyle.borderColor, borderStrokeWidth: rStyle.borderStrokeWidth),
+              ]),
+              MarkerLayer(markers: [
+                ...rs.waypoints.asMap().entries.map((entry) {
+                  final isStart = entry.key == 0;
+                  final isEnd = entry.key == rs.waypoints.length - 1 && rs.waypoints.length > 1;
+                  Widget child;
+                  if (isStart) {
+                    child = rStyle.startMarkerWidget ?? Icon(Icons.trip_origin, color: Colors.green, size: 20);
+                  } else if (isEnd) {
+                    child = rStyle.endMarkerWidget ?? Icon(Icons.location_on, color: Colors.red, size: 32);
+                  } else {
+                    child = rStyle.intermediateMarkerWidget ?? Icon(Icons.circle, color: Colors.orange, size: 20);
+                  }
+                  return Marker(point: entry.value, width: 36, height: 36, alignment: Alignment.bottomCenter, child: child);
+                }),
+                ...widget.pins.map((e) => Marker(
+                  key: ObjectKey(e), point: LatLng(e.latLong.latitude, e.latLong.longitude),
+                  alignment: Alignment.bottomCenter, width: 150, height: 150,
+                  child: GestureDetector(
+                    onTap: () => setState(() { _selectedElement = _selectedElement == e ? null : e; e.onTap?.call(); }),
+                    onLongPress: rm != null ? () => _showPinRoutingMenu(e) : null,
+                    child: Column(mainAxisSize: MainAxisSize.min, mainAxisAlignment: MainAxisAlignment.end, children: [
+                      if (_selectedElement == e) Flexible(child: e.detailWidget ?? Column(mainAxisSize: MainAxisSize.min, children: [
+                        if (e.title.isNotEmpty) Container(padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2), decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(4)), child: Text(e.title, style: const TextStyle(color: Colors.white, fontSize: 10), overflow: TextOverflow.ellipsis)),
+                        if (e.detail.isNotEmpty) Container(padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2), decoration: BoxDecoration(color: Colors.white70, borderRadius: BorderRadius.circular(4)), child: Text(e.detail, style: const TextStyle(color: Colors.black, fontSize: 8), overflow: TextOverflow.ellipsis)),
+                      ])),
+                      e.child ?? Icon(e.icon, color: e.color, size: 30),
+                    ]),
                   ),
-                ),
-              if (widget.showZoomButtons)
-                Positioned(
-                  bottom: 180,
-                  right: 5,
-                  child: FloatingActionButton(
-                    heroTag: 'btn1',
-                    backgroundColor: widget.buttonColor,
-                    onPressed: () {
-                      _mapController.move(_mapController.camera.center,
-                          _mapController.camera.zoom + 1);
-                    },
-                    child: Icon(
-                      widget.zoomInIcon,
-                      color: widget.buttonTextColor,
-                    ),
+                )),
+                ...widget.zones.map((e) => Marker(
+                  key: ObjectKey(e), point: LatLng(e.center.latitude, e.center.longitude),
+                  alignment: Alignment.center, width: 120, height: 120,
+                  child: GestureDetector(onTap: () => setState(() { _selectedElement = _selectedElement == e ? null : e; e.onTap?.call(); }),
+                    child: Column(mainAxisSize: MainAxisSize.min, children: [
+                      if (_selectedElement == e) Flexible(child: e.detailWidget ?? Column(mainAxisSize: MainAxisSize.min, children: [
+                        if (e.title.isNotEmpty) Container(padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2), decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(4)), child: Text(e.title, style: const TextStyle(color: Colors.white, fontSize: 10))),
+                        if (e.detail.isNotEmpty) Container(padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2), decoration: BoxDecoration(color: Colors.white70, borderRadius: BorderRadius.circular(4)), child: Text(e.detail, style: const TextStyle(color: Colors.black, fontSize: 8))),
+                      ])),
+                      Container(width: 12, height: 12, decoration: BoxDecoration(color: e.borderColor, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2), boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 2)])),
+                    ]),
                   ),
-                ),
-              if (widget.showZoomButtons)
-                Positioned(
-                  bottom: 120,
-                  right: 5,
-                  child: FloatingActionButton(
-                    heroTag: 'btn2',
-                    backgroundColor: widget.buttonColor,
-                    onPressed: () {
-                      _mapController.move(_mapController.camera.center,
-                          _mapController.camera.zoom - 1);
-                    },
-                    child: Icon(
-                      widget.zoomOutIcon,
-                      color: widget.buttonTextColor,
-                    ),
-                  ),
-                ),
-              if (widget.showCurrentLocationButton)
-                Positioned(
-                  bottom: 60,
-                  right: 5,
-                  child: FloatingActionButton(
-                    heroTag: 'btn3',
-                    backgroundColor: widget.buttonColor,
-                    onPressed: () async {
-                      if (mapCentre != null) {
-                        _mapController.move(
-                            LatLng(mapCentre.latitude, mapCentre.longitude),
-                            _mapController.camera.zoom);
-                      } else {
-                        _mapController.move(
-                            LatLng(50.5, 30.51), _mapController.camera.zoom);
-                      }
-                      setNameCurrentPos();
-                    },
-                    child: Icon(
-                      widget.currentLocationIcon,
-                      color: widget.buttonTextColor,
-                    ),
-                  ),
-                ),
-              if (widget.showSearchBar && !widget.isReadOnly)
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    margin: const EdgeInsets.all(15),
-                    decoration: BoxDecoration(
-                      color: widget.backgroundColor,
-                      borderRadius: BorderRadius.circular(5),
-                    ),
-                    child: Column(
-                      children: [
-                        TextFormField(
-                            controller: _searchController,
-                            focusNode: _focusNode,
-                            decoration: InputDecoration(
-                              hintText: widget.hintText,
-                              border: inputBorder,
-                              focusedBorder: inputFocusBorder,
-                            ),
-                            onChanged: (String value) {
-                              if (_debounce?.isActive ?? false) {
-                                _debounce?.cancel();
-                              }
-
-                              _debounce = Timer(
-                                  const Duration(milliseconds: 2000), () async {
-                                if (kDebugMode) {
-                                  print(value);
-                                }
-                                var client = http.Client();
-                                try {
-                                  String url =
-                                      '${widget.baseUri}/search?q=$value&format=json&polygon_geojson=1&addressdetails=1';
-                                  if (kDebugMode) {
-                                    print(url);
-                                  }
-                                  var response = await client.get(Uri.parse(url),
-                                      headers: {
-                                        'User-Agent':
-                                            widget.userAgentPackageName,
-                                      });
-                                  // var response = await client.post(Uri.parse(url));
-                                  var decodedResponse = jsonDecode(
-                                          utf8.decode(response.bodyBytes))
-                                      as List<dynamic>;
-                                  if (kDebugMode) {
-                                    print(decodedResponse);
-                                  }
-                                  _options = decodedResponse
-                                      .map(
-                                        (e) => OSMdata(
-                                          displayname: e['display_name'],
-                                          lat: double.parse(e['lat']),
-                                          lon: double.parse(e['lon']),
-                                        ),
-                                      )
-                                      .toList();
-                                  setState(() {});
-                                } finally {
-                                  client.close();
-                                }
-
-                                setState(() {});
-                              });
-                            }),
-                        StatefulBuilder(
-                          builder: ((context, setState) {
-                            return ListView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount:
-                                  _options.length > 5 ? 5 : _options.length,
-                              itemBuilder: (context, index) {
-                                return ListTile(
-                                  title: Text(_options[index].displayname),
-                                  subtitle: Text(
-                                      '${_options[index].lat},${_options[index].lon}'),
-                                  onTap: () {
-                                    _mapController.move(
-                                        LatLng(_options[index].lat,
-                                            _options[index].lon),
-                                        15.0);
-
-                                    _focusNode.unfocus();
-                                    _options.clear();
-                                    setState(() {});
-                                  },
-                                );
-                              },
-                            );
-                          }),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              if (widget.showSetLocationButton && !widget.isReadOnly)
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: WideButton(
-                        widget.buttonText,
-                        textStyle: widget.buttonTextStyle,
-                        height: widget.buttonHeight,
-                        width: widget.buttonWidth,
-                        onPressed: () async {
-                          final value = await pickData();
-                          widget.onPicked(value);
-                        },
-                        backgroundColor: widget.buttonColor,
-                        foregroundColor: widget.buttonTextColor,
-                        borderRadius: widget.buttonBorderRadius,
-                        elevation: widget.buttonElevation,
-                      ),
-                    ),
-                  ),
-                )
+                )),
+              ]),
             ],
-          ),
-        );
+          )),
+
+          if (rm != null && rm.isPickingMode)
+            Positioned(top: 60, left: 0, right: 0, child: IgnorePointer(child: Center(child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(color: Colors.black87, borderRadius: BorderRadius.circular(20)),
+              child: Text(rs.hasStart ? 'Tap map to set end point' : 'Tap map to set start point', style: const TextStyle(color: Colors.white, fontSize: 13)),
+            )))),
+
+          if (!widget.isReadOnly && !_routingPanelVisible) Positioned.fill(child: IgnorePointer(child: Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+            Text(widget.locationPinText, style: widget.locationPinTextStyle, textAlign: TextAlign.center),
+            Padding(padding: const EdgeInsets.only(bottom: 50), child: widget.locationPinWidget ?? Icon(widget.locationPinIcon, size: 50, color: widget.locationPinIconColor)),
+          ])))),
+
+          if (widget.showZoomButtons) Positioned(bottom: _routingPanelVisible ? 320 : 180, right: 5, child: FloatingActionButton(heroTag: 'osm_zi', mini: true, backgroundColor: widget.buttonColor, onPressed: () => _mapController.move(_mapController.camera.center, _mapController.camera.zoom + 1), child: Icon(widget.zoomInIcon, color: widget.buttonTextColor, size: 20))),
+          if (widget.showZoomButtons) Positioned(bottom: _routingPanelVisible ? 270 : 130, right: 5, child: FloatingActionButton(heroTag: 'osm_zo', mini: true, backgroundColor: widget.buttonColor, onPressed: () => _mapController.move(_mapController.camera.center, _mapController.camera.zoom - 1), child: Icon(widget.zoomOutIcon, color: widget.buttonTextColor, size: 20))),
+          if (widget.showCurrentLocationButton) Positioned(bottom: _routingPanelVisible ? 220 : 80, right: 5, child: FloatingActionButton(heroTag: 'osm_loc', mini: true, backgroundColor: widget.buttonColor, onPressed: () async {
+            if (mapCentre != null) { _mapController.move(mapCentre, _mapController.camera.zoom); }
+            else { try { final pos = await Geolocator.getCurrentPosition(); _mapController.move(LatLng(pos.latitude, pos.longitude), _mapController.camera.zoom); } catch (_) {} }
+          }, child: Icon(widget.currentLocationIcon, color: widget.buttonTextColor, size: 20))),
+
+          if (widget.showRoutingButton && rm != null)
+            Positioned(bottom: _routingPanelVisible ? 175 : 80, left: 5, child: FloatingActionButton(
+              heroTag: 'osm_rt', backgroundColor: widget.buttonColor,
+              onPressed: () => setState(() => _routingPanelVisible = !_routingPanelVisible),
+              child: rs.isFetching
+                  ? SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: widget.buttonTextColor, strokeWidth: 2))
+                  : Icon(_routingPanelVisible ? Icons.close : Icons.alt_route, color: widget.buttonTextColor),
+            )),
+
+          if (widget.showSearchBar && !widget.isReadOnly)
+            Positioned(top: 0, left: 0, right: 0, child: Container(
+              margin: const EdgeInsets.all(15),
+              decoration: BoxDecoration(color: widget.backgroundColor, borderRadius: BorderRadius.circular(5)),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                TextFormField(
+                  controller: _searchController, focusNode: _focusNode,
+                  decoration: InputDecoration(hintText: widget.hintText, border: inputBorder, focusedBorder: focusBorder,
+                      suffixIcon: _searchController.text.isNotEmpty ? IconButton(icon: const Icon(Icons.clear), onPressed: () { _searchController.clear(); setState(() => _options = []); }) : null),
+                  onChanged: (v) { _debounce?.cancel(); _debounce = Timer(const Duration(milliseconds: 600), () => _search(v)); },
+                ),
+                if (_options.isNotEmpty) ListView.builder(
+                  shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
+                  itemCount: _options.length > 5 ? 5 : _options.length,
+                  itemBuilder: (_, i) => ListTile(
+                    title: Text(_options[i].displayname, maxLines: 1, overflow: TextOverflow.ellipsis),
+                    subtitle: Text('${_options[i].lat.toStringAsFixed(5)}, ${_options[i].lon.toStringAsFixed(5)}'),
+                    onTap: () { _mapController.move(LatLng(_options[i].lat, _options[i].lon), 15.0); _focusNode.unfocus(); setState(() => _options = []); },
+                  ),
+                ),
+              ]),
+            )),
+
+          if (widget.showSetLocationButton && !widget.isReadOnly && !_routingPanelVisible)
+            Positioned(bottom: 0, left: 0, right: 0, child: Center(child: Padding(padding: const EdgeInsets.all(8.0), child: WideButton(
+              widget.buttonText, textStyle: widget.buttonTextStyle, height: widget.buttonHeight, width: widget.buttonWidth,
+              onPressed: () async { final v = await _pickData(); widget.onPicked(v); },
+              backgroundColor: widget.buttonColor, foregroundColor: widget.buttonTextColor,
+              borderRadius: widget.buttonBorderRadius, elevation: widget.buttonElevation,
+            )))),
+
+          if (rm != null && _routingPanelVisible)
+            Positioned(bottom: 0, left: 0, right: 0, child: RoutingPanel(
+              state: rs,
+              style: widget.routingPanelStyle,
+              onModeChanged: (m) => rm.setTravelMode(m),
+              onRemoveWaypoint: (i) => rm.removeWaypoint(i),
+              onAddStop: () => rm.startPicking(),
+              onClear: () { rm.clear(); setState(() => _routingPanelVisible = false); },
+              onPickStart: () { final c = _mapController.camera.center; rm.addWaypointFromTap(c); },
+              onPickEnd: () => rm.startPicking(),
+            )),
+        ]));
       },
     );
   }
-
-  Future<PickedData> pickData() async {
-    LatLong center = LatLong(_mapController.camera.center.latitude,
-        _mapController.camera.center.longitude);
-    var client = http.Client();
-    String url =
-        '${widget.baseUri}/reverse?format=json&lat=${_mapController.camera.center.latitude}&lon=${_mapController.camera.center.longitude}&zoom=18&addressdetails=1';
-
-    var response = await client.get(Uri.parse(url), headers: {
-      'User-Agent': widget.userAgentPackageName,
-    });
-    // var response = await client.post(Uri.parse(url));
-    var decodedResponse =
-        jsonDecode(utf8.decode(response.bodyBytes)) as Map<dynamic, dynamic>;
-    String displayName = decodedResponse['display_name'];
-    return PickedData(center, displayName, decodedResponse["address"]);
-  }
-}
-
-class OSMdata {
-  final String displayname;
-  final double lat;
-  final double lon;
-  OSMdata({required this.displayname, required this.lat, required this.lon});
-  @override
-  String toString() {
-    return '$displayname, $lat, $lon';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType) {
-      return false;
-    }
-    return other is OSMdata && other.displayname == displayname;
-  }
-
-  @override
-  int get hashCode => Object.hash(displayname, lat, lon);
-}
-
-/// Represents a Latitude and Longitude coordinate pair.
-class LatLong {
-  final double latitude;
-  final double longitude;
-  const LatLong(this.latitude, this.longitude);
-}
-
-/// Represents a zone to be drawn on the map as a circle.
-class ZoneData {
-  /// The center of the zone.
-  final LatLong center;
-
-  /// The radius of the zone in meters.
-  final double radius;
-
-  /// The color of the circle.
-  final Color color;
-
-  /// The border color of the circle.
-  final Color borderColor;
-
-  /// The border stroke width of the circle.
-  final double borderStrokeWidth;
-
-  /// Whether to use a fill color for the circle.
-  final bool useFillColor;
-
-  /// Custom detail widget shown when the zone is tapped.
-  final Widget? detailWidget;
-
-  /// Detailed description of the zone, shown on tap.
-  final String detail;
-
-  /// Title of the zone, shown on tap.
-  final String title;
-
-  /// Callback called when the zone is tapped.
-  final void Function()? onTap;
-
-  ZoneData({
-    required this.center,
-    required this.radius,
-    this.color = const Color(0x332196F3),
-    this.borderColor = const Color(0xFF2196F3),
-    this.borderStrokeWidth = 0.0,
-    this.useFillColor = true,
-    this.detailWidget,
-    this.detail = '',
-    this.title = '',
-    this.onTap,
-  });
-}
-
-/// Represents a pin to be drawn on the map.
-class PinData {
-  /// The GPS coordinates of the pin.
-  final LatLong latLong;
-
-  /// The title of the pin, displayed as a tooltip or label.
-  final String title;
-
-  /// Detailed description of the pin.
-  final String detail;
-
-  /// The color of the pin icon.
-  final Color color;
-
-  /// The icon to use for the pin.
-  final IconData icon;
-
-  /// Custom detail widget shown when the pin is tapped.
-  final Widget? detailWidget;
-
-  /// Callback called when the pin is tapped.
-  final void Function()? onTap;
-
-  PinData({
-    required this.latLong,
-    this.title = '',
-    this.detail = '',
-    this.color = Colors.red,
-    this.icon = Icons.location_on,
-    this.detailWidget,
-    this.onTap,
-  });
-}
-
-/// Data returned when a location is picked.
-class PickedData {
-  /// The GPS coordinates of the picked location.
-  final LatLong latLong;
-
-  /// The full display name of the address.
-  final String addressName;
-
-  /// A map containing detailed address components (city, country, etc.).
-  final Map<String, dynamic> address;
-
-  PickedData(this.latLong, this.addressName, this.address);
 }
