@@ -322,7 +322,6 @@ The `onPicked` callback returns a `PickedData` object containing:
 ![Demo C](https://raw.githubusercontent.com/mrmhthegreat/osm_search_and_pick/refs/heads/main/screenshots/c.png)
 
 
-
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
